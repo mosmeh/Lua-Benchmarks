@@ -1,39 +1,42 @@
 #!/bin/env lua
 
 -- Configuration ---------------------------------------------------------------
-
 -- List of binaries that will be tested
-local binaries = {
-    { 'lua-5.3.4', 'lua' },
-    { 'luajit-2.0.4-interp', 'luajit -joff' },
-    { 'luajit-2.0.4', 'luajit' },
-}
+--[[
+local binaries = {{'lua-5.4.4', '/home/mosm/lua-5.4.4/src/lua'}, {'lua-5.3.6', '/home/mosm/lua-5.3.6/src/lua'},
+                  {'lua-5.2.4', '/home/mosm/lua-5.2.4/src/lua'}, {'lua-5.1.5', '/home/mosm/lua-5.1.5/src/lua'},
+                  {'lua-5.0.3', '/home/mosm/lua-5.0.3/bin/lua'}, {'mochi', '/home/mosm/mochi/target/release/mochi'}}
+]] --
+local binaries = {{'lua-5.4.4', '/home/mosm/lua-5.4.4/src/lua'}, {'lua-5.1.5', '/home/mosm/lua-5.1.5/src/lua'},
+                  {'mochi', '/home/mosm/mochi/target/release/mochi'}}
+-- local binaries = {{'lua-5.1.5', '/home/mosm/lua-5.1.5/src/lua'}, {'mochi', '/home/mosm/mochi/target/release/mochi'}}
+-- local binaries = {{'lua-5.4.4', '/home/mosm/lua-5.4.4/src/lua'}, {'mochi', '/home/mosm/mochi/target/release/mochi'}}
 
 -- List of tests
 local tests_root = './'
-local tests = {
-    { 'ack', 'ack.lua 3 10' },
-    { 'fixpoint-fact', 'fixpoint-fact.lua 3000' },
-    { 'heapsort', 'heapsort.lua 10 250000' },
-    { 'mandelbrot', 'mandel.lua' },
-    { 'juliaset', 'qt.lua' },
-    { 'queen', 'queen.lua 12' },
-    { 'sieve', 'sieve.lua 5000' }, -- Sieve of Eratosthenes
-    { 'binary', 'binary-trees.lua 15' },
-    { 'n-body', 'n-body.lua 1000000' },
-    { 'fannkuch', 'fannkuch-redux.lua 10' },
-    { 'fasta', 'fasta.lua 2500000' },
-    { 'k-nucleotide', 'k-nucleotide.lua < fasta1000000.txt' },
-    --{ 'regex-dna', 'regex-dna.lua < fasta1000000.txt' },
-    { 'spectral-norm', 'spectral-norm.lua 1000' },
-}
+local tests = { --
+{'life', 'life.lua'}, --
+{'ack', 'ack.lua 3 10'}, --
+{'fixpoint-fact', 'fixpoint-fact.lua 3000'}, --
+{'heapsort', 'heapsort.lua 10 250000'}, --
+{'mandelbrot', 'mandel.lua'}, --
+{'juliaset', 'qt.lua'}, --
+{'queen', 'queen.lua 12'}, -- Sieve of Eratosthenes
+{'sieve', 'sieve.lua 5000'}, --
+{'binary', 'binary-trees.lua 15'}, --
+{'n-body', 'n-body.lua 1000000'}, --
+{'fannkuch', 'fannkuch-redux.lua 10'}, --
+{'fasta', 'fasta.lua 2500000'}, --
+-- { 'k-nucleotide', 'k-nucleotide.lua < fasta1000000.txt' },
+-- { 'regex-dna', 'regex-dna.lua < fasta1000000.txt' },
+{'spectral-norm', 'spectral-norm.lua 1000'}}
 
 -- Command line arguments ------------------------------------------------------
 
 local nruns = 3
-local supress_errors = true 
+local supress_errors = false
 local basename = 'results'
-local normalize = false
+local normalize = true
 local speedup = false
 local plot = true
 
@@ -63,7 +66,9 @@ local function parse_args()
         return v
     end
     for i = 1, #arg do
-        if not arg[i] then goto continue end
+        if not arg[i] then
+            goto continue
+        end
         if arg[i] == '--nruns' then
             nruns = tonumber(get_next_arg(i))
             if not nruns or nruns < 1 then
@@ -93,8 +98,7 @@ end
 
 -- Run the command a single time and returns the time elapsed
 local function measure(cmd)
-    local time_cmd = '{ TIMEFORMAT=\'%3R\'; time ' ..  cmd ..
-            ' > /dev/null; } 2>&1'
+    local time_cmd = 'bash -c \"{ TIMEFORMAT=\'%3R\'; time ' .. cmd .. ' > /dev/null; } 2>&1"'
     local handle = io.popen(time_cmd)
     local result = handle:read("*a")
     local time_elapsed = tonumber(result)
@@ -142,7 +146,7 @@ local function run_all()
             end
         end
     end
-    return results 
+    return results
 end
 
 -- Perform an operation for each value in the matrix
@@ -174,7 +178,7 @@ local function create_data_file(results)
     for i, test in ipairs(tests) do
         data = data .. test[1] .. '\t'
         for j, _ in ipairs(binaries) do
-            data = data .. results[i][j] .. '\t' 
+            data = data .. results[i][j] .. '\t'
         end
         data = data .. '\n'
     end
@@ -191,10 +195,9 @@ local function generate_image()
     else
         ylabel = 'Elapsed time'
     end
-    os.execute('gnuplot -e "datafile=\'' .. basename .. '.txt\'" ' ..
-               '-e "outfile=\'' .. basename .. '.png\'" ' ..
-               '-e "ylabel=\'' .. ylabel .. '\'" ' ..
-               '-e "nbinaries=' .. #binaries .. '" plot.gpi')
+    os.execute('gnuplot -e "datafile=\'' .. basename .. '.txt\'" ' .. '-e "outfile=\'' .. basename .. '.png\'" ' ..
+                   '-e "ylabel=\'' .. ylabel .. '\'" ' .. '-e "nbinaries=' .. #binaries .. '" ' ..
+                   '-e "set yrange [0:]" plot.gpi')
 end
 
 local function setup()
@@ -226,9 +229,10 @@ local function main()
     end
     process_results(results, f)
     create_data_file(results)
-    if plot then generate_image() end
+    if plot then
+        generate_image()
+    end
     print('final done')
 end
 
 main()
-

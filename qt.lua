@@ -249,7 +249,7 @@ local function memory(s)
 	local t=os.clock()
 	--local dt=string.format("%f",t-t0)
 	local dt=t-t0
-	io.stdout:write(s,"\t",dt," sec\t",t," sec\t",math.floor(collectgarbage"count"/1024),"M\n")
+	io.write(s,"\t",dt," sec\t",t," sec\t",math.floor(collectgarbage"count"/1024),"M\n")
 	t0=t
 end
 
